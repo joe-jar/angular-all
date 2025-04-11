@@ -531,6 +531,220 @@ export class AppComponent {}
 
 ---
 
+# 📘 Angular — Components, Lifecycle Hooks, Directives, Pipes & Modules
+
+A deep dive into the foundational building blocks of Angular, including modern standalone patterns introduced since Angular v15+.
+
+---
+
+## ✅ Components
+
+### What is a Component?
+An Angular component:
+- Controls a portion of the UI
+- Includes a template (HTML), class (TypeScript), and optional styles (CSS/SCSS)
+- Is declared using the `@Component()` decorator
+
+### Classic Component Example (Standalone)
+```ts
+@Component({
+  selector: 'app-welcome',
+  standalone: true,
+  template: `<h1>Welcome, {{ name }}</h1>`,
+  imports: [CommonModule]
+})
+export class WelcomeComponent {
+  name = 'Angular';
+}
+```
+
+### Lifecycle Hooks
+These are special methods Angular calls at specific moments:
+
+| Hook               | When it runs                            |
+|--------------------|------------------------------------------|
+| `ngOnInit()`       | After inputs are set                     |
+| `ngOnChanges()`    | On any input property change             |
+| `ngAfterViewInit()`| After the component’s view is initialized|
+| `ngOnDestroy()`    | Just before the component is destroyed   |
+
+#### Example:
+```ts
+export class LifecycleDemoComponent implements OnInit, OnDestroy {
+  ngOnInit() {
+    console.log('Component initialized');
+  }
+
+  ngOnDestroy() {
+    console.log('Component destroyed');
+  }
+}
+```
+
+---
+
+## ✅ Directives
+Directives are instructions in the DOM:
+
+### Built-In Structural
+- `*ngIf`: Conditionally includes a template
+- `*ngFor`: Iterates over collections
+- `*ngSwitch`: Multi-conditional rendering
+
+### Attribute Directives
+Modify the appearance or behavior of an element:
+```html
+<div [ngClass]="{active: isActive}"></div>
+<input [disabled]="isDisabled" />
+```
+
+### Custom Directive Example (Standalone)
+```ts
+@Directive({ selector: '[appBorderHighlight]', standalone: true })
+export class BorderHighlightDirective {
+  @HostListener('mouseenter') onMouseEnter() {
+    this.el.nativeElement.style.border = '2px solid blue';
+  }
+  @HostListener('mouseleave') onMouseLeave() {
+    this.el.nativeElement.style.border = '';
+  }
+  constructor(private el: ElementRef) {}
+}
+```
+
+---
+
+## ✅ Pipes
+Transform output in templates.
+
+### Built-In Pipes
+- `date`, `uppercase`, `lowercase`, `currency`, `percent`
+
+### Custom Pipe Example (Standalone)
+```ts
+@Pipe({ name: 'initials', standalone: true })
+export class InitialsPipe implements PipeTransform {
+  transform(name: string): string {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
+}
+```
+```html
+<p>{{ 'John Doe' | initials }}</p> <!-- Output: JD -->
+```
+
+---
+
+## ✅ Modules vs Standalone
+
+### Traditional NgModule Approach
+```ts
+@NgModule({
+  declarations: [AppComponent, MyDirective, MyPipe],
+  imports: [BrowserModule, FormsModule],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+### Standalone Component Approach
+Angular v15+ lets you:
+- Skip NgModules
+- Use `standalone: true` in components, pipes, and directives
+- Bootstrap with `bootstrapApplication()`
+
+#### Standalone Bootstrap Example
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideRouter(appRoutes)]
+});
+```
+
+### Example of Composing Standalone Imports
+```ts
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: '<app-welcome></app-welcome>',
+  imports: [WelcomeComponent, BorderHighlightDirective, InitialsPipe]
+})
+export class AppComponent {}
+```
+
+---
+
+## ✅ Handling Errors in Observables
+
+When working with observables in Angular, it's important to handle errors gracefully. Here are common techniques:
+
+### 1. `catchError` — Handle and Recover
+```ts
+this.apiService.getData().pipe(
+  catchError(err => {
+    console.error('API failed', err);
+    return of([]); // Fallback value
+  })
+).subscribe(data => this.results = data);
+```
+
+### 2. `retry(n)` — Simple Retries
+```ts
+this.apiService.getData().pipe(
+  retry(3),
+  catchError(() => of([]))
+).subscribe();
+```
+
+### 3. `retryWhen` — Advanced Retry Logic with Delay
+```ts
+this.apiService.getData().pipe(
+  retryWhen(errors => errors.pipe(
+    delay(1000),
+    take(3),
+    concatWith(throwError(() => new Error('Retries failed')))
+  ))
+).subscribe();
+```
+
+### 4. `tap` — For Logging or Side Effects
+```ts
+this.apiService.getData().pipe(
+  tap({
+    next: () => console.log('Success'),
+    error: err => console.error('Failed:', err)
+  })
+).subscribe();
+```
+
+### 5. `finalize` — Always Run on Completion/Error
+```ts
+this.apiService.getData().pipe(
+  finalize(() => this.loading = false)
+).subscribe();
+```
+
+### 🧠 Summary Table
+| Technique      | Purpose                         | Use Case Example                |
+|----------------|----------------------------------|----------------------------------|
+| `catchError()` | Recover with fallback            | Show empty UI on failure        |
+| `retry()`      | Retry N times                    | Flaky network request           |
+| `retryWhen()`  | Retry with delay/backoff         | Controlled retry strategies     |
+| `tap()`        | Log or perform side effects      | Analytics/logging               |
+| `finalize()`   | Always cleanup                   | Hide loader                     |
+
+---
+
+## ✅ Summary
+- Components define the UI, and now can be standalone
+- Lifecycle hooks let you tap into component phases
+- Directives modify DOM structure/behavior
+- Pipes format values in templates
+- Standalone components are the future — no need for NgModules
+
+Let me know if you'd like to dive into signals, change detection strategies, or create advanced composition patterns next 🚀
+
+
+
 
 
 
